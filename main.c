@@ -4,8 +4,11 @@
 
 #define nullptr NULL
 
-static int on_x_error(Display *display, XErrorEvent *e);
-static int OnWMDetected(Display* display, XErrorEvent* e);
+void on_create_notify(XCreateWindowEvent e){};
+void on_destroy_notify(XDestroyWindowEvent e){};
+void on_reparent_notify(XReparentEvent e){};
+void on_configure_request(WM wm,XConfigureRequestEvent e);
+
 
 WM wm_init(){
   WM wm;
@@ -33,9 +36,47 @@ void wm_run(WM wm){
   XSync(wm.display, false);
 
   wm.wm_running = true;
+
+  for(;;){
+    XEvent e;
+    XNextEvent(wm.display, &e);
+
+    switch(e.type){
+      case CreateNotify:
+        on_create_notify(e.xcreatewindow);
+        break;
+      case DestroyNotify:
+        on_destroy_notify(e.xdestroywindow);
+        break;
+      case ReparentNotify:
+        on_reparent_notify(e.xreparent);
+        break;
+      case ConfigureRequest:
+        on_configure_request(wm, e.xconfigurerequest);
+        break;
+
+      default: 
+        printf("Ignored Event");
+    }
+  }
+}
+
+void on_configure_request(WM wm, XConfigureRequestEvent e){
+  XWindowChanges changes;
+
+  changes.x = e.x;
+  changes.y = e.y;
+  changes.width = e.width;
+  changes.height = e.height;
+  changes.border_width = e.border_width;
+  changes.sibling = e.above;
+  changes.stack_mode = e.detail;
+
+  XConfigureWindow(wm.display, e.window, e.value_mask, &changes);
 }
 
 int main(){
   WM wm = wm_init();
+  wm_run(wm);
   wm_close(wm);
 }
