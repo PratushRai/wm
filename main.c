@@ -7,6 +7,8 @@
 void on_create_notify(XCreateWindowEvent e){};
 void on_destroy_notify(XDestroyWindowEvent e){};
 void on_reparent_notify(XReparentEvent e){};
+
+
 void on_configure_request(WM wm,XConfigureRequestEvent e);
 
 
