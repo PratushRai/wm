@@ -7,9 +7,9 @@
 void on_create_notify(XCreateWindowEvent e){};
 void on_destroy_notify(XDestroyWindowEvent e){};
 void on_reparent_notify(XReparentEvent e){};
-
-
+void on_map_request(WM wm, XMapRequestEvent e);
 void on_configure_request(WM wm,XConfigureRequestEvent e);
+void frame(WM wm, Window w);
 
 
 WM wm_init(){
@@ -61,6 +61,51 @@ void wm_run(WM wm){
         printf("Ignored Event");
     }
   }
+}
+
+void on_map_request(WM wm, XMapRequestEvent e){
+  frame(wm,e.window); 
+  XMapWindow(wm.display, e.window);
+}
+
+void frame(WM wm, Window w){
+  const unsigned int BORDER_WIDTH = 3;
+  const unsigned int BORDER_COLOR = 0xff0000;
+  const unsigned int BG_COLOR = 0x0000ff;
+
+  XWindowAttributes x_win_attrs;
+  CHECK(XGetWindowAttributes(wm.display, w, &x_win_attrs));
+
+  const Window frame = XCreateSimpleWindow(
+    wm.display,
+    wm.root,
+    x_win_attrs.x,
+    x_win_attrs.y,
+    x_win_attrs.width,
+    x_win_attrs.height,
+    BORDER_WIDTH,
+    BORDER_COLOR,
+    BG_COLOR
+  );
+
+  XSelectInput(
+    wm.display,
+    frame,
+    SubstructureRedirectMask | SubstructureNotifyMask
+  );
+
+  XAddToSaveSet(wm.display, w);
+
+  XReparentWindow(
+    wm.display,
+    w,
+    frame,
+    0, 0);
+
+  XMapWindow(wm.display, frame);
+
+  
+
 }
 
 void on_configure_request(WM wm, XConfigureRequestEvent e){
